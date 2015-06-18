@@ -1,0 +1,6 @@
+{
+	"example" : {
+		"appkey"   : "example",
+		"appApiUrl"   : "http://gametob.github.io/sparta-module/"
+	}
+}

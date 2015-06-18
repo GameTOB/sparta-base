@@ -1,0 +1,6 @@
+{% for file in AppJsFiles['mock'] %}
+<script src="app/{{ file }}"></script>{% endfor %}
+<script src="app/mock.js"></script>
+<script src="app/index.js"></script>
+{% for dir in ['conf','service','controller','directive','template'] %}{% for file in AppJsFiles[dir] %}
+<script src="app/{{ file }}"></script>{% endfor %}{% endfor %}

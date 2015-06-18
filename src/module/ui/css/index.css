@@ -1,0 +1,13 @@
+.ui-alert-modal .modal-dialog , .ui-confirm-modal .modal-dialog {
+	height: 100%;
+}
+.ui-alert-modal .modal-content , .ui-confirm-modal .modal-content {
+	top : 30%;
+}
+.ui-alert-modal .modal-body , .ui-confirm-modal .modal-body {
+	padding-bottom: 5px;
+}
+.ui-alert-modal .modal-footer , .ui-confirm-modal .modal-footer {
+	border-top:0;
+	padding: 5px 15px 15px;
+}

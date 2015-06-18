@@ -1,0 +1,16 @@
+'use strict';
+
+angular.module('framework')
+
+.constant('ApiErrno', {
+    DEV_ERROR: 1100,
+    UNLOGIN: 50401,
+    FORBIDDEN: 50403,
+    NOT_FOUND: 50404,
+    AUTHREQUIRED: 50407,
+    PRECONDITION_FAILED: 50412,
+    INPUT_EXT: 50413,
+    INTERNAL_SERVER_ERROR: 50500,
+    BAD_GATEWAY: 50502,
+    GATEWAY_TIMEOUT: 50504
+});

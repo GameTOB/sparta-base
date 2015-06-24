@@ -211,6 +211,10 @@ body.body-small .navbar-top-links li:last-child {
     border: none;
 }
 
+.nav.nav-third-level > li.active {
+    border: none;
+}
+
 .nav.nav-second-level.collapse[style] {
     height: auto !important;
 }

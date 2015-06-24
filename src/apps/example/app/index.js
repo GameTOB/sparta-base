@@ -24,16 +24,11 @@ angular.module('app', [
 })
 
 
-.controller('app.indexCtrl', function($scope, Menu) {
+.controller('app.indexCtrl', function($scope, AppMenu) {
   
-    $scope.menu = [];
-
-    Menu.getTreeData().then(function(data){
-        $scope.menu.data = data;
-        return Menu.getNodeSvc();
-    }).then(function(svc){
-        $scope.menu.nodeSvc = svc;
-        //console.log($scope.menu);
+    $scope.menuData = [];
+    AppMenu.getData().then(function(data){
+        $scope.menuData = data;
     });
 
 });

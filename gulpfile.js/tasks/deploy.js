@@ -22,7 +22,7 @@ gulp.task('deploy::clean' , function(cb){
 });	
 
 gulp.task('deploy::ready' , function(cb){
-	return gulp.src([config.destDirectory+'/apps/'+appkey+'/**/*' , config.destDirectory+'/+(framework|module|vendor)/**/*' ])
+	return gulp.src([config.destDirectory+'/apps/'+appkey+'/**/*' , config.destDirectory+'/+(framework|module)/**/*' ])
   		.pipe(plumber())
     	.pipe(gulp.dest(config.tmpDirectory));
 });

@@ -1,6 +1,7 @@
 var gulp     = require('gulp'),
 	plumber  = require('gulp-plumber'),
-	ghPages = require('gulp-gh-pages'),
+	ghPages  = require('gulp-gh-pages'),
+	del      = require('del'),
 	sequence = require('gulp-sequence');
 
 var config  = require('../config/deploy'),
@@ -12,8 +13,29 @@ process.env.NODE_ENV = "dev";
 process.env.NEED_WATCH  = "";
 process.env.HTTP_SERVER = "";
 
-gulp.task('deploy',['build'], function() {
-  return gulp.src(config.destDirectory+'/**/*')
-  	.pipe(plumber())
-    .pipe(ghPages());
+var appkey = "example"
+
+gulp.task('deploy::clean' , function(cb){
+	del([
+    	config.tmpDirectory
+  	], cb);
+});	
+
+gulp.task('deploy::ready' , function(cb){
+	return gulp.src([config.destDirectory+'/apps/'+appkey+'/**/*' , config.destDirectory+'/+(framework|module|vendor)/**/*' ])
+  		.pipe(plumber())
+    	.pipe(gulp.dest(config.tmpDirectory));
+});
+
+gulp.task('deploy::push' , function(cb){
+	return gulp.src(config.tmpDirectory+'/**/*')
+  		.pipe(plumber())
+    	.pipe(ghPages());
+});
+
+
+gulp.task('deploy',['build'], function(cb) {
+
+  sequence('deploy::ready' , 'deploy::push' , cb);
+
 });

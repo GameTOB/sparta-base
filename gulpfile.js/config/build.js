@@ -5,8 +5,5 @@ var newConf = {};
 newConf.srcDirectory  = config.srcDirectory;
 newConf.destDirectory = config.destDirectory;
 newConf.confDirectory = config.confDirectory;
-newConf.vendorDirectory = config.vendorDirectory;
-newConf.moduleDirectory = config.moduleDirectory;
-newConf.frameworkDirectory = config.frameworkDirectory;
 
 module.exports = newConf;

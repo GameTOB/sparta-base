@@ -39,7 +39,7 @@ gulp.task('httpServer::ngxconf' , function(cb){
 
 	var ngxconfFile = config.confDirectory + '/options/tpl_sparta-module_ngx.conf' ;
 
-	appTask.append("httpServer::ngxconf", function(appkey){
+	appTask.append("httpServer::build-ngxconf", function(appkey){
 
 		return gulp.src(ngxconfFile)
 		.pipe(data(function(){
@@ -57,6 +57,19 @@ gulp.task('httpServer::ngxconf' , function(cb){
 
 	});
 
+	appTask.append("httpServer::link-ngxconf", function(appkey){
+
+		var ngxconfSrc  = process.env.PWD +"/"+config.confDirectory + "/used/"+process.env.USER+"_"+appkey+"_sparta_ngx.conf"
+		 ,  ngxconfDest = "/usr/local/nginx/conf/include/"+process.env.USER+"_"+appkey+"_sparta-module_ngx.conf";
+		//console.log("ls -l "+ngxconfDest+"||sudo ln -s "+ngxconfSrc+" "+ngxconfDest);
+
+		//待讨论 , 若第一个shell出错后 return 出错；第二个shell正确后 就继续了。
+		return gulp.src(config.confDirectory)
+		.pipe(plumber())
+		.pipe(shell("ls -l "+ngxconfDest+"||sudo ln -s "+ngxconfSrc+" "+ngxconfDest))
+
+	});
+
 	appTask.finish(cb);
 
 });
@@ -67,20 +80,8 @@ gulp.task('httpServer', ['httpServer::ngxconf'] , function() {
 	//开发机使用nginx方式建立调试环境
 	if(process.env.HTTP_SERVER=="nginx"){
 
-		var tmpStream = gulp.src(config.confDirectory).pipe(plumber());
-		var ngxconfSrc , ngxconfDest;
-
-		appConf.getAppkeys().forEach(function(appkey){
-
-			ngxconfSrc  = process.env.PWD +"/"+config.confDirectory + "/used/"+process.env.USER+"_"+appkey+"_sparta-module_ngx.conf";
-			ngxconfDest = "/usr/local/nginx/conf/include/"+process.env.USER+"_"+appkey+"_sparta-module_ngx.conf";
-			console.log("sudo ln -s "+ngxconfSrc+" "+ngxconfDest);
-			tmpStream = tmpStream.pipe(shell("sudo ln -s "+ngxconfSrc+" "+ngxconfDest));
-		});
-		//如果软链错误则不 reload nginx
-		console.log("sudo service nginx reload");
-		tmpStream = tmpStream.pipe(shell("sudo service nginx reload"));
-		return tmpStream;
+		return gulp.src(config.confDirectory)
+		.pipe(shell("sudo service nginx reload"));
 
 	}else if(process.env.HTTP_SERVER=="nodejs"){
 		console.log("httpServer","nodejs");

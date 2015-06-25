@@ -36,6 +36,6 @@ gulp.task('deploy::push' , function(cb){
 
 gulp.task('deploy',['build'], function(cb) {
 
-  sequence('deploy::ready' , 'deploy::push' , cb);
+  sequence('deploy::clean' ,'deploy::ready' , 'deploy::push' , cb);
 
 });

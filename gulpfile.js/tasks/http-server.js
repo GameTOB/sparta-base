@@ -6,7 +6,7 @@ var gulp = require('gulp'),
     swig    = require('gulp-swig'),
     browserSync = require('browser-sync'),
 	modRewrite = require('connect-modrewrite'),
-	logger = require('connect-logger'),
+	//logger = require('connect-logger'),
     shell  		= require('gulp-shell');
 
 var config = require('../config'),

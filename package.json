@@ -1,14 +1,13 @@
 {
-  "name": "sparta",
-  "version": "2.0.0-pre",
-  "description": "sparta for 360",
+  "name": "sparta-module",
+  "version": "1.0.0",
+  "description": "sparta module",
   "main": "gulpfile.js",
   "author": "",
   "repository": {},
   "devDependencies": {
     "autoprefixer-core": "^4.0.2",
     "browser-sync": "^2.4.0",
-    "connect-logger": "0.0.1",
     "connect-modrewrite": "^0.8.1",
     "walker": "~1.0.7",
     "through2": "^0.6.5",
@@ -34,7 +33,6 @@
     "gulp-swig": "^0.7.4",
     "gulp-util": "^3.0.4",
     "gulp-markdown":"^1.0.0",
-    "merge-stream": "^0.1.7",
     "minimist": "^1.1.1",
     "require-dir": "^0.3.0"
   },

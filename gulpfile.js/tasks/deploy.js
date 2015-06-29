@@ -8,10 +8,7 @@ var config  = require('../config/deploy'),
 	appConf = require('../lib/app-conf'),
 	appTask = require('../lib/app-task');
 
-//实现较挫 需要重构为 before + after 模式
-process.env.NODE_ENV = "dev";
-process.env.NEED_WATCH  = "";
-process.env.HTTP_SERVER = "";
+
 
 var appkey = "example"
 
@@ -34,8 +31,11 @@ gulp.task('deploy::push' , function(cb){
 });
 
 
-gulp.task('deploy',['build'], function(cb) {
-
-  sequence('deploy::clean' ,'deploy::ready' , 'deploy::push' , cb);
+gulp.task('deploy', function(cb) {
+ 
+	process.env.NODE_ENV = "dev";
+	process.env.NEED_WATCH  = "";
+	process.env.HTTP_SERVER = "";
+  	sequence('build','deploy::clean' ,'deploy::ready' , 'deploy::push' , cb);
 
 });

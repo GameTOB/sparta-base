@@ -1,10 +1,10 @@
 <ul class="nav">
-	<li ng-repeat="node in uiMenuData" 
-		ng-class="{active: uiMenuNodeSvc.isUnfold(node)}">
-		<a href="{{node.url}}" ng-click="!node.url && uiMenuNodeSvc.toggleFold(node)">
+	<li ng-repeat="node in uiMenuNodes" 
+		ng-class="{active: node.isUnfold()}">
+		<a href="{{node.url}}" ng-click="!node.url && node.toggleUnfold()">
 			<span class="nav-label">{{node.title}} {{node.id}}</span>
-			<span class="fa arrow" ng-if="uiMenuNodeSvc.isParent(node)"></span>
+			<span class="fa arrow" ng-if="node.isParent()"></span>
 		</a>
-		<div ui-menu ng-if="uiMenuNodeSvc.isParent(node)" children-data="uiMenuNodeSvc.getChildren(node)" ng-class="{in: uiMenuNodeSvc.isUnfold(node)}" class="collapse"></div>
+		<div ui-menu ng-if="node.isParent()" children-data="node.getChildren()" ng-class="{in: node.isUnfold()}" class="collapse"></div>
 	</li>
 </ul>

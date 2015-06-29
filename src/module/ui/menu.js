@@ -7,56 +7,89 @@ angular.module('module')
 	var menuData = [],
 		nodeTree = [],
 		nodeMap  = {},
-		routePathToNodeId = {},
-		unfoldNodeIds = [];
+		routePathToNodeId = {};
 
-	var NodeSvc = {
+	var NodeState = (function(){
+		var unfoldNodeIds = [];
 
-		//是父节点则必须有子节点 所以不存在 isParent && !hasChildren
-        isParent : function(node){
-            return node && node.children && node.children.length > 0;
-        }, 
-        //如果存在 children 属性，但长度为0 ，则也认为是子节点
-        isChild : function(node){
-            return node && !NodeSvc.isParent(node);
+		return {
+			isUnfold : function(node){
+				return node && node.id && unfoldNodeIds.indexOf(node.id)>-1;
+			},
+			unfold : function(node){
+	        	if(unfoldNodeIds[0] == node.id){
+	        		//已经为当前node不作为
+	        		return;
+	        	}
+	        	//展开:
+	        	//0. 清空记录的已展开数据
+	        	unfoldNodeIds = [];
+	        	//1. 展开自身
+	        	unfoldNodeIds.push(node.id);
+	        	//2. 如不为顶层 则展开所有父级直至顶层
+	        	var parentNode , parentId = node.parentId;
+	        	while(parentId && (parentNode = nodeMap[parentId])){
+	        		unfoldNodeIds.push(parentId);
+	        		parentId = parentNode.parentId;
+	        	}
+	        	//console.log("unfoldNodeIds",unfoldNodeIds);
+	        },
+	        fold : function(node){
+	        	//如果有父级 则设置父级为current
+	        	var parentNode;
+	        	if(node.parentId && (parentNode = nodeMap[node.parentId])){
+	        		NodeState.unfold(parentNode);
+	        	}else{
+	        		unfoldNodeIds = [];
+	        	}
+	        },
+	        update : function(){
+
+	        	if(!$location.path()){
+					return;
+				}
+				var nodeId = routePathToNodeId[$location.path()] || null;
+				var node;
+				if(nodeId && (node = nodeMap[nodeId])){
+					NodeState.unfold(node);
+				}
+				//console.log($location.path() , node);
+			},
+			reset : function(){
+				unfoldNodeIds = [];
+				NodeState.update();
+			},
+			clear : function(){
+				unfoldNodeIds = [];
+			}
+		};
+	})();
+
+
+
+	var Node = function(node){
+		this.node = node;
+		this.id   = node.id;
+		this.url  = node.url;
+		this.title = node.title;
+		this.parentId = node.parentId;
+	};
+	Node.prototype = {
+		isParent : function(){
+			return this.node && this.node.children && this.node.children.length > 0;
+		},
+		isChild : function(){
+            return this.node && !this.isParent();
         },
-        isUnfold : function(node){
-            return node && node.id && unfoldNodeIds.indexOf(node.id)>-1;
+        getChildren : function(){
+            return this.node.children || null;
         },
-        getChildren : function(node){
-            return node.children || null;
+        isUnfold : function(){
+        	return NodeState.isUnfold(this.node);
         },
-        unfold : function(node){
-        	if(unfoldNodeIds[0] == node.id){
-        		//已经为当前node不作为
-        		return;
-        	}
-        	//展开:
-        	//0. 清空记录的已展开数据
-        	unfoldNodeIds = [];
-        	//1. 展开自身
-        	unfoldNodeIds.push(node.id);
-        	//2. 如不为顶层 则展开所有父级直至顶层
-        	var parentNode , parentId = node.parentId;
-        	while(parentId && (parentNode = nodeMap[parentId])){
-        		unfoldNodeIds.push(parentId);
-        		parentId = parentNode.parentId;
-        	}
-        	//console.log("unfoldNodeIds",unfoldNodeIds);
-        },
-        fold : function(node){
-        	//如果有父级 则设置父级为current
-        	var parentNode;
-        	if(node.parentId && (parentNode = nodeMap[node.parentId])){
-        		NodeSvc.unfold(parentNode);
-        	}else{
-        		unfoldNodeIds = [];
-        	}
-        },
-        toggleFold : function(node){
-        	NodeSvc.isUnfold(node) ? NodeSvc.fold(node) : NodeSvc.unfold(node);
+        toggleUnfold : function(){
+        	NodeState.isUnfold(this.node) ? NodeState.fold(this.node) : NodeState.unfold(this.node);
         }
-
 	};
 
 
@@ -82,28 +115,16 @@ angular.module('module')
 	    		routePathToNodeId[item.url] = item.id;
 	    		item.url = "#"+item.url;
 	    	}
-	    	nodeMap[item.id] = item;
-	    	return item;
+	    	nodeMap[item.id] = new Node(item);
+	    	return nodeMap[item.id];
 		});
 		return [nodeTree , nodeMap , routePathToNodeId];
-	} , updateUnfold = function(){
-		if(!$location.path()){
-			return;
-		}
-		var nodeId = routePathToNodeId[$location.path()] || null;
-		var node;
-		if(nodeId && (node = nodeMap[nodeId])){
-			NodeSvc.unfold(node);
-		}
-		//console.log($location.path() , node);
-	};
+	} ;
 
 
 	var Menu = {
 
-		NodeSvc : NodeSvc ,
-
-		fill : function(data){
+		reset : function(data){
 			if(!data){
 				return;
 			}
@@ -114,9 +135,7 @@ angular.module('module')
 				nodeTree = res[0],
 				nodeMap  = res[1],
 				routePathToNodeId = res[2],
-				unfoldNodeIds = [];
-
-				updateUnfold();
+				NodeState.reset();
 			}
 		},
 
@@ -130,7 +149,7 @@ angular.module('module')
 
 	};
 
-	$rootScope.$on('$locationChangeSuccess', updateUnfold);
+	$rootScope.$on('$locationChangeSuccess', NodeState.update);
 
 	return Menu;
 })
@@ -147,7 +166,6 @@ angular.module('module')
 			var compiledContents;
 			return function PostLinkingFunction (scope, element, attrs) {
 
-				scope['uiMenuNodeSvc'] = UIMenu.NodeSvc;
 				if(!compiledContents) {
                     compiledContents = $compile(contents, transclude);
                 }
@@ -159,8 +177,8 @@ angular.module('module')
 						return;
 					}
 					// console.log("contents" ,element[0]);
-	                UIMenu.fill(data);
-			      	scope['uiMenuData'] = UIMenu.getAll();
+	                UIMenu.reset(data);
+			      	scope['uiMenuNodes'] = UIMenu.getAll();
 	                compiledContents(scope, function(clone, scope) {
 	                    element.empty().append(clone);
 	            	});
@@ -172,7 +190,7 @@ angular.module('module')
 					if(data==null){
 						return;
 					}
-			      	scope['uiMenuData'] = data;
+			      	scope['uiMenuNodes'] = data;
 	                compiledContents(scope, function(clone, scope) {
                         element.empty().append(clone);
                 	});

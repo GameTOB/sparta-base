@@ -2,12 +2,55 @@
 
 angular.module('module')
 
+/**
+ * [UIMenu]
+ * Notice : 不适用于增量变化的菜单 菜单数据需在UIMenu.init时全量设置完毕
+ * Fixed: 
+ *  - 15/6/30 同一个url对应多个node
+ *  - 15/7/1  $location.path()引起unfold策略:采取按"/"分割后逐个缩短的策略查找对应node
+ *            即 存在节点A的url为"/a/b"时 且不存在节点url为"/a/b/c" , 
+ *            $location.path()为"/a/b/c"或"/a/b/c/:param" 均使节点A置为unfold
+ *  - ...
+ * 
+ * return {
+ * 		init:<function> return <Nodes>;
+ * 		getAll:<function> return <Nodes>;
+ * 		getById:<function> return <Node>;
+ * }
+ */
 .factory('UIMenu', function($q , $location , $rootScope) {
 
 	var menuData = [],
 		nodeTree = [],
-		nodeMap  = {},
-		routePathToNodeId = {};
+		nodeMap  = {};
+		
+
+	var UrlToNodes = (function(){
+		/**
+		 * [urlToNodes description]
+		 * @type {Object}
+		 * 
+		 * {
+		 * 	'/realtime/game':[1000,1010,1011] ,
+		 *  '/realtime/total':[1100],
+		 *  '/realtime/department':[1200,1210],
+		 * }
+		 */
+		var store = {};
+
+		return {
+			set: function(url , node){
+				if(store[url] && angular.isArray(store[url])){
+					store[url].push(node);
+				}else{
+					store[url] = [node];
+				}
+			},
+			get : function(url){
+				return store[url] || null;
+			}
+		}
+	})();
 
 	var NodeState = (function(){
 		var unfoldNodeIds = [];
@@ -16,47 +59,63 @@ angular.module('module')
 			isUnfold : function(node){
 				return node && node.id && unfoldNodeIds.indexOf(node.id)>-1;
 			},
-			unfold : function(node){
-	        	if(unfoldNodeIds[0] == node.id){
-	        		//已经为当前node不作为
-	        		return;
-	        	}
-	        	//展开:
-	        	//0. 清空记录的已展开数据
-	        	unfoldNodeIds = [];
-	        	//1. 展开自身
-	        	unfoldNodeIds.push(node.id);
-	        	//2. 如不为顶层 则展开所有父级直至顶层
-	        	var parentNode , parentId = node.parentId;
-	        	while(parentId && (parentNode = nodeMap[parentId])){
-	        		unfoldNodeIds.push(parentId);
-	        		parentId = parentNode.parentId;
-	        	}
+			unfold : function(nodes){
+				if(!angular.isArray(nodes)){
+					nodes = [nodes];
+				}
+				var comboNoedIds = [];
+				var parentNode , parentId;
+				
+				nodes.forEach(function(node){
+					if(comboNoedIds.indexOf(node.id)==-1){
+						comboNoedIds.push(node.id);
+					}
+					parentId = node.parentId;
+		        	while(parentId && (parentNode = nodeMap[parentId])){
+		        		if(comboNoedIds.indexOf(parentNode.id)==-1){
+							comboNoedIds.push(parentNode.id);
+						}
+		        		parentId = parentNode.parentId;
+		        	}
+				});
+				unfoldNodeIds = comboNoedIds;
 	        	//console.log("unfoldNodeIds",unfoldNodeIds);
 	        },
-	        fold : function(node){
-	        	//如果有父级 则设置父级为current
-	        	var parentNode;
-	        	if(node.parentId && (parentNode = nodeMap[node.parentId])){
-	        		NodeState.unfold(parentNode);
-	        	}else{
-	        		unfoldNodeIds = [];
-	        	}
+	        fold : function(nodes){
+	        	if(!angular.isArray(nodes)){
+					nodes = [nodes];
+				}
+				var unfoldNodes = [];
+				var parentNode;
+
+				nodes.forEach(function(node){
+					if(node.parentId && (parentNode = nodeMap[node.parentId])){
+		        		unfoldNodes.push(parentNode);
+		        	}
+				});
+
+				NodeState.unfold(unfoldNodes);
 	        },
 	        update : function(){
 
 	        	if(!$location.path()){
 					return;
 				}
-				var nodeId = routePathToNodeId[$location.path()] || null;
-				var node;
-				if(nodeId && (node = nodeMap[nodeId])){
-					NodeState.unfold(node);
+				var pathArr = $location.path().split("/");
+				var path , nodes;
+				while(pathArr.length>0){
+					path = pathArr.join("/");
+					nodes = UrlToNodes.get('#'+path);
+					if(nodes && nodes.length>0){
+						NodeState.unfold(nodes);
+						break;
+					}else{
+						pathArr.pop();
+					}
 				}
-				//console.log($location.path() , node);
 			},
-			reset : function(){
-				unfoldNodeIds = [];
+			init : function(){
+				NodeState.clear();
 				NodeState.update();
 			},
 			clear : function(){
@@ -72,7 +131,9 @@ angular.module('module')
 		this.id   = node.id;
 		this.url  = node.url;
 		this.title = node.title;
-		this.parentId = node.parentId;
+		if(node.parentId){
+			this.parentId = node.parentId;
+		}
 	};
 	Node.prototype = {
 		isParent : function(){
@@ -95,7 +156,7 @@ angular.module('module')
 
 	var scanChildren = function(children , parentId){
 
-		var nodeMap = {} , routePathToNodeId = {};
+		var nodeMap = {};
 		var nodeTree = children.map(function(item){
 			item = angular.copy(item);
 			if(parentId){
@@ -105,38 +166,39 @@ angular.module('module')
 				var res = scanChildren(item.children , item.id);
 				item.children = res[0];
 				angular.extend(nodeMap, res[1]);
-				angular.extend(routePathToNodeId, res[2]);
 	    	}
 	    	if(item.url && item.url.indexOf("http://")==-1 && item.url.indexOf("https://")==-1){
 	    		//注意执行顺序
 	    		if(item.url[0]!="/"){
 	    			item.url = "/"+item.url;
 	    		}
-	    		routePathToNodeId[item.url] = item.id;
 	    		item.url = "#"+item.url;
 	    	}
-	    	nodeMap[item.id] = new Node(item);
-	    	return nodeMap[item.id];
+	    	var node = new Node(item);
+	    	nodeMap[item.id] = node;
+	    	UrlToNodes.set(item.url , node);
+	    	
+	    	return node;
 		});
-		return [nodeTree , nodeMap , routePathToNodeId];
+		return [nodeTree , nodeMap];
 	} ;
 
 
 	var Menu = {
 
-		reset : function(data){
+		init : function(data){
 			if(!data){
-				return;
+				return [];
 			}
 			var currentMenuData = angular.copy(data);
 			if(!angular.equals(currentMenuData, menuData)){
 				menuData = currentMenuData;
 				var res = scanChildren(menuData);
 				nodeTree = res[0],
-				nodeMap  = res[1],
-				routePathToNodeId = res[2],
-				NodeState.reset();
+				nodeMap  = res[1];
+				NodeState.init();
 			}
+			return nodeTree;
 		},
 
 		getAll : function(){
@@ -176,9 +238,7 @@ angular.module('module')
 					if(data==null){
 						return;
 					}
-					// console.log("contents" ,element[0]);
-	                UIMenu.reset(data);
-			      	scope['uiMenuNodes'] = UIMenu.getAll();
+			      	scope['uiMenuNodes'] = UIMenu.init(data);
 	                compiledContents(scope, function(clone, scope) {
 	                    element.empty().append(clone);
 	            	});

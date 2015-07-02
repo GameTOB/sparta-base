@@ -9,7 +9,8 @@ var gulp = require('gulp'),
 
 var config = require('../config/build'),
 	appConf = require('../lib/app-conf'),
-	appTask = require('../lib/app-task');
+	appTask = require('../lib/app-task'),
+	vendor  = require('../lib/vendor');
 
 gulp.task('init::clean', function (cb) {
 
@@ -36,10 +37,7 @@ gulp.task('init::conf', function (cb) {
 
 gulp.task('init::vendor', function (cb) {
 
-    //这种做法存在NODE文件缓存 但这里可以用
-    var packages = require('../../package.json');
-    var depends = packages.dependencies ? (Object.keys(packages.dependencies)) : [],
-        src = 'node_modules/+(' + depends.join("|") + ')/**/*';
+    var src = vendor.getSrc("node_modules");
     return gulp.src(src)
   		.pipe(gulp.dest(config.destDirectory+'/vendor'));
 });

@@ -16,7 +16,7 @@ regVendorGlob("bootstrap",["/+(dist)/**/*"]);
 regVendorGlob("es5-shim",["/*.js"]);
 regVendorGlob("font-awesome",["/+(css|fonts)/**/*"]);
 regVendorGlob("jquery",["/+(dist)/**/*"]);
-regVendorGlob("json3",["+(lib)/*.js"]);
+regVendorGlob("json3",["/+(lib)/*.js"]);
 regVendorGlob("normalize.css",["/*.css"]);
 
 
@@ -37,7 +37,7 @@ var packages = require('../../package.json'),
 	depends = packages.dependencies ? (Object.keys(packages.dependencies)) : [];
 var globs;
 	depends.forEach(function(vendor){
-		globs = vendorGlobs[vendor] || [];
+		globs = vendorGlobs[vendor] || ["/+(dist)/**/*","/*.{js,css}"];
 		regGlobFolders(vendor , globs);
 	});
 

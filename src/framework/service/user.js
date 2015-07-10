@@ -2,7 +2,7 @@
 
 angular.module('framework')
 
-.factory('User', function($q, Api, ApiErrno, APPCONF, $route, $timeout, $location, Debug) {
+.factory('User', function($q, Api, ApiErrno, APPCONF, APPENV , $route, $timeout, $location, Debug) {
 
     //apiKey保证不会重名即可
     var userApi = Api("userApiCreateByManZhouyao", {
@@ -19,9 +19,9 @@ angular.module('framework')
                     if ($location.path() != "/user/login") {
                         $location.url("/user/login");
                     }
-                } else if (error.errno == ApiErrno.AUTHREQUIRED || error.errno == ApiErrno.FORBIDDEN) {
-                    if ($location.path() != "/user/forbidden") {
-                        $location.url("/user/forbidden");
+                } else if (error.errno == ApiErrno.AUTHREQUIRED) {
+                    if ($location.path() != "/user/authrequired") {
+                        $location.url("/user/authrequired");
                     }
                 } else {
                     Debug.error("获取用户信息接口出错", error);
@@ -30,10 +30,10 @@ angular.module('framework')
             });
         }
 
-        //除了已在 /user/login 或 /user/forbidden 
+        //除了已在 /user/login 或 /user/authrequired 
         //其他一律不向上传递即到此为止，因上面的异步跳转会执行
         //
-        if ($location.path() == "/user/login" || $location.path() == "/user/forbidden") {
+        if ($location.path() == "/user/login" || $location.path() == "/user/authrequired") {
             deferred.resolve(error);
         } else {
             //
@@ -68,7 +68,9 @@ angular.module('framework')
         login: function() {
             if (isCorp) {
                 $location.search('sid', null);
-                location.replace("https://login.ops.qihoo.net:4430/sec/login?ref=" + encodeURIComponent(location.href));
+                $timeout(function() {
+                    location.replace("https://login.ops.qihoo.net:4430/sec/login?ref=" + encodeURIComponent(location.href));
+                });
                 return;
             }else if (isQuc && window.QHPass) {
                 window.QHPass && QHPass.signIn(function() {
@@ -81,35 +83,43 @@ angular.module('framework')
         get: function() {
             var deferred = $q.defer();
             var params = {
-                appkey: APPCONF.NAME
+                appkey: APPCONF.APPKEY
             };
             if (isCorp && $route.current && $route.current.params.sid) {
                 params.sid = $route.current.params.sid;
             }
-            userApi.get("user/get", params).then(function(data) {
-                deferred.resolve(data);
-            }, function(error) {
-                deferred.reject(error);
-            });
+            if (!APPENV.USER) {
+                userApi.get("user/get", params).then(function(data) {
+                    APPENV.USER = data;
+                    deferred.resolve(data);
+                }, function(error) {
+                    deferred.reject(error);
+                });
+            } else {
+                deferred.resolve(APPENV.USER);
+            }
+
             return deferred.promise;
         },
         logout: function() {
             var deferred = $q.defer();
             if (isCorp) {
                 userApi.get("user/logout").then(function(data) {
+                    APPENV.USER = null;
                     deferred.resolve(data);
                 }, function(error) {
+                    APPENV.USER = null;
                     deferred.reject(error);
-                })
+                });
             }
             if (isQuc) {
                 window.QHPass && QHPass.signOut(function() {
+                    APPENV.USER = null;
                     deferred.resolve();
-                })
+                });
             }
             return deferred.promise;
         }
-
     };
     return User;
 });

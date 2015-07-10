@@ -13,11 +13,13 @@ angular.module('framework', [
 .run(['$route', angular.noop])
 
 //初始化全局appApi
-.run(function(APPCONF, APPENV, $q, $http, Api, ApiErrno, $location, $timeout) {
+.run(function(APPCONF, APPENV, $q, $http, Api, ApiErrno, User, $location, $timeout) {
 
     var appApi = Api(APPCONF.APPKEY, {
         url: APPCONF.APP_API_URL
     });
+
+    appApi.bindSetup(User.get);
 
     appApi.bindError(function(error) {
         var deferred = $q.defer();
@@ -25,7 +27,7 @@ angular.module('framework', [
         //deferred.reslove 则抛出给应用层处理
         //deferred.reject  则吃掉此错误 不抛给应用层
         if (error.errtype == "http") {
-            console.log("HTTP错误", error.errno, error.errmsg);
+            //console.log("HTTP错误", error.errno, error.errmsg);
             deferred.resolve(error);
         } else {
             switch (error.errno) {
@@ -34,14 +36,14 @@ angular.module('framework', [
                     deferred.resolve(error);
                     break;
                 case ApiErrno.UNLOGIN:
-                	$location.url("/user/login");
+                    $location.url("/user/login");
                     deferred.reject(error);
                     break;
-                case ApiErrno.UNAUTHORIZED:
-                case ApiErrno.FORBIDDEN:
-                    $location.url("/user/forbidden");
+                case ApiErrno.AUTHREQUIRED:
+                    $location.url("/user/authrequired");
                     deferred.reject(error);
                     break;
+                case ApiErrno.FORBIDDEN: 
                 default:
                     deferred.resolve(error);
                     break;

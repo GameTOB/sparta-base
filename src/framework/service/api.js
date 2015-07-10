@@ -125,10 +125,14 @@ angular.module('framework')
             if (url[url.length - 1] != "/") {
                 url += "/";
             }
+            if(behavior.charAt(0)=="/"){
+                behavior = behavior.substr(1);
+            }
             var httpOption = {
                     url: url + behavior,
                     method: "jsonp",
-                    params: params || {}
+                    params: params || {},
+                    paramSerializer : '$httpParamSerializerJQLike'
                 },
                 httpKey = JSON.stringify(httpOption);
             if (angular.isUndefined(_runnings[httpKey])) {
@@ -136,7 +140,6 @@ angular.module('framework')
                     deferred: []
                 };
                 _runnings[httpKey].deferred.push(deferred);
-
                 $http(httpOption).then(function(result) {
 
                     var appRes = result.data;
@@ -193,9 +196,9 @@ angular.module('framework')
             //              successRes = $q.when(data);
             //          }
             //          successRes.then(function(data){
-            //          	deferred.resolve(data);
+            //              deferred.resolve(data);
             //          },function(){
-            //          	//Do nothing 
+            //              //Do nothing 
             //          })
 
         }, function(error) {
@@ -210,9 +213,9 @@ angular.module('framework')
             //              errorRes = $q.when(error);
             //          }
             //          errorRes.then(function(error){
-            //          	deferred.reject(error);
+            //              deferred.reject(error);
             //          },function(){
-            //          	//Do nothing 
+            //              //Do nothing 
             //          });
 
         });

@@ -12,6 +12,13 @@ angular.module("framework")
         });
     }
 
+    function camelCase(name) {
+        return name.
+        replace(SPECIAL_CHARS_REGEXP, function(_, separator, letter, offset) {
+            return offset ? letter.toUpperCase() : letter;
+        });
+    }
+
     /**
      * [simpleWhen]
      * @param  {[String]} path /xxx/:yyy/zzz => ["xxx","zzz"]
@@ -42,8 +49,8 @@ angular.module("framework")
                 }
                 //console.log(groupKey,routeKeyArr);
                 var mixOpts = {
-                    templateUrl: APPCONF.TPLROOT + '/' + (groupKey ? groupKey + '/' : '') + dashCase(routeKey) + '.tpl',
-                    controller: 'app.'+ (groupKey ? groupKey + '.' : '') + dashCase(routeKey) + 'Ctrl'
+                    templateUrl: APPCONF.TPLROOT + '/' + (groupKey ? dashCase(groupKey) + '/' : '') + dashCase(routeKey) + '.tpl',
+                    controller: 'app.'+ (groupKey ? camelCase(groupKey) + '.' : '') + camelCase(routeKey) + 'Ctrl'
                 };
                 angular.extend(mixOpts, opts);
                 $routeProvider.when(path, mixOpts);

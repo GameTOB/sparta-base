@@ -5,6 +5,7 @@ angular.module('framework', [
     'ngAnimate',
     'ngSanitize',
     'ngRoute',
+    'ngMessages',
     'ui.bootstrap'
 ])
 

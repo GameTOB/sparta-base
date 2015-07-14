@@ -4,6 +4,14 @@ angular.module("framework")
 
 .config(function($routeProvider, APPCONF) {
     var SPECIAL_CHARS_REGEXP = /([\:\-\_\/]+(.))/g;
+    var UPPER_CASE_REGEXP = /[A-Z]/g;
+    
+    function separateCase(name, separator) {
+      separator = separator || '-';
+      return name.replace(UPPER_CASE_REGEXP, function(letter, pos) {
+        return (pos ? separator : '') + letter.toLowerCase();
+      });
+    }
 
     function dashCase(name) {
         return name.
@@ -49,7 +57,7 @@ angular.module("framework")
                 }
                 //console.log(groupKey,routeKeyArr);
                 var mixOpts = {
-                    templateUrl: APPCONF.TPLROOT + '/' + (groupKey ? dashCase(groupKey) + '/' : '') + dashCase(routeKey) + '.tpl',
+                    templateUrl: APPCONF.TPLROOT + '/' + (groupKey ? separateCase(dashCase(groupKey)) + '/' : '') + separateCase(dashCase(routeKey)) + '.tpl',
                     controller: 'app.'+ (groupKey ? camelCase(groupKey) + '.' : '') + camelCase(routeKey) + 'Ctrl'
                 };
                 angular.extend(mixOpts, opts);

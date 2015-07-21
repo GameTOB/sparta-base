@@ -1777,9 +1777,8 @@
     
                     height = button.outerHeight ?
                             button.outerHeight() : button.height(),
-    
+                    
                     pos = button.offset();
-    
                 width && height && shimContainer.css({
                     bottom: 'auto',
                     right: 'auto',
@@ -2712,8 +2711,24 @@
             removeFile: function( file ) {
                 var me = this,
                     existing = this._map[ file.id ];
-    
                 if ( existing ) {
+                    /*---begin---*/
+                    /**
+                     * added by zhouyao
+                     * deleted the _queue item
+                     * 用兼容IE6的方式
+                     */
+                    var existIndex = -1;
+                    for(var i=0,max=this._queue.length;i<max;i++){
+                        if(file.id==this._queue[i].id){
+                            existIndex = i;
+                            break;
+                        }
+                    }
+                    if(existIndex > -1){
+                        this._queue.splice(existIndex,1);
+                    }
+                    /*---end---*/
                     delete this._map[ file.id ];
                     file.destroy();
                     this.stats.numofDeleted++;

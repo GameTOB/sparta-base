@@ -128,26 +128,26 @@ angular.module('framework')
             if(behavior.charAt(0)=="/"){
                 behavior = behavior.substr(1);
             }
-            var httpOption = {
+            var httpOptions = {
                 url: url + behavior,
                 method: "jsonp",
                 params: params || {},
                 paramSerializer : '$httpParamSerializerJQLike'
             };
-            angular.extend(httpOption, options);
+            angular.extend(httpOptions, options);
             //如果method被更改 须修正
-            if(httpOption.method=="post"){
-                delete httpOption['params'];
-                httpOption['data'] = $.param(params);
-                httpOption['headers'] = {"Content-Type": "application/x-www-form-urlencoded"};
+            if(httpOptions.method=="post"){
+                delete httpOptions['params'];
+                httpOptions['data'] = $.param(params);
+                httpOptions['headers'] = {"Content-Type": "application/x-www-form-urlencoded"};
             }
-            var httpKey = JSON.stringify(httpOption);
+            var httpKey = JSON.stringify(httpOptions);
             if (angular.isUndefined(_runnings[httpKey])) {
                 _runnings[httpKey] = {
                     deferred: []
                 };
                 _runnings[httpKey].deferred.push(deferred);
-                $http(httpOption).then(function(result) {
+                $http(httpOptions).then(function(result) {
 
                     var appRes = result.data;
 

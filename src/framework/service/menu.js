@@ -18,10 +18,7 @@ angular.module('framework')
 		if(cache && cache.length>0 && !force){
 			deferred.resolve(cache);
 		}else{
-			menuApi.get("menu/get_tree", {appkey: APPCONF.APPKEY} , {
-				cache:true,
-				header : {}
-			}).then(function(data){
+			menuApi.get("menu/get_tree", {appkey: APPCONF.APPKEY}).then(function(data){
 				cache = data;
 				deferred.resolve(cache);
 			});

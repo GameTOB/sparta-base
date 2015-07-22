@@ -105,7 +105,7 @@ angular.module('framework')
         this.errors.push(callback);
     };
 
-    var realGet = function(ins, behavior, params) {
+    var realGet = function(ins, behavior, params , options) {
         var deferred = $q.defer();
         var url = ins.url;
         var _self = ins;
@@ -129,12 +129,19 @@ angular.module('framework')
                 behavior = behavior.substr(1);
             }
             var httpOption = {
-                    url: url + behavior,
-                    method: "jsonp",
-                    params: params || {},
-                    paramSerializer : '$httpParamSerializerJQLike'
-                },
-                httpKey = JSON.stringify(httpOption);
+                url: url + behavior,
+                method: "jsonp",
+                params: params || {},
+                paramSerializer : '$httpParamSerializerJQLike'
+            };
+            angular.extend(httpOption, options);
+            //如果method被更改 须修正
+            if(httpOption.method=="post"){
+                delete httpOption['params'];
+                httpOption['data'] = $.param(params);
+                httpOption['headers'] = {"Content-Type": "application/x-www-form-urlencoded"};
+            }
+            var httpKey = JSON.stringify(httpOption);
             if (angular.isUndefined(_runnings[httpKey])) {
                 _runnings[httpKey] = {
                     deferred: []
@@ -175,15 +182,15 @@ angular.module('framework')
         return deferred.promise;
     };
 
-    Api.prototype.get = function(behavior, params) {
+    Api.prototype.get = function(behavior, params , options) {
         var _self = this;
+        options = options || {};
         if (_self.successes.length == 0 && _self.errors.length == 0) {
-            return realGet(this, behavior, params);
+            return realGet(this, behavior, params , options);
         }
 
         var deferred = $q.defer();
-
-        realGet(this, behavior, params).then(function(data) {
+        realGet(this, behavior, params , options).then(function(data) {
 
             getSeriesPromise(_self.successes, data).then(function(data) {
                 deferred.resolve(data);

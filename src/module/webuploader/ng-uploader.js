@@ -149,7 +149,7 @@ angular.module('module')
 
     $uploader = Uploader.create(options);
     $scope.$uploader = $uploader;
-    window.uploader = $uploader;
+    //window.uploader = $uploader;
 
     uploaderName = $attrs.name || "uploader";
 

@@ -80,7 +80,10 @@ angular.module('framework')
                 Debug.error('Please use 360.cn or copr.qihoo.net , or you could forget QUC JS-SDK');
             }
         },
-        get: function() {
+        getTruely : function(force){
+            return user.get(force);
+        },
+        get: function(force) {
             var deferred = $q.defer();
             var params = {
                 appkey: APPCONF.APPKEY
@@ -88,7 +91,7 @@ angular.module('framework')
             if (isCorp && $route.current && $route.current.params.sid) {
                 params.sid = $route.current.params.sid;
             }
-            if (!APPENV.USER) {
+            if (!!force || !APPENV.USER) {
                 userApi.get("user/get", params).then(function(data) {
                     APPENV.USER = data;
                     deferred.resolve(data);

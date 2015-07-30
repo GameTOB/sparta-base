@@ -15,7 +15,7 @@
       <tr ng-repeat="week in weeks">
         <td ng-repeat="day in week">
           <span
-            ng-class="{'now':isNow(day),'active':isSameDay(day),'disabled':(day.getMonth()!=date.getMonth()),'after':isAfter(day),'before':isBefore(day)}"
+            ng-class="{'now':isNow(day),'active':isSameDay(day),'other-month':(day.getMonth()!=date.getMonth()),'after':isAfter(day),'before':isBefore(day),'disabled':isDisabled(day)}"
             ng-click="setDate(day)" ng-bind="day.getDate()"></span>
         </td>
       </tr>

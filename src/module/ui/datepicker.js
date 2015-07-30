@@ -7,12 +7,9 @@ angular.module('module')
     view: 'date',
     views: ['year', 'month', 'date', 'hours', 'minutes'],
     format: 'yyyy-MM-dd HH:mm',
-    autoClose: false,
+    closeOnDateSelection: true,
     step: 5,
-    appendToBody : false,
-    popupTemplate: function(attrs) {
-        return '' + '<div ' + 'ui-date-picker ng-model="date" ' + (attrs.view ? 'view="' + attrs.view + '" ' : '') + (attrs.maxView ? 'max-view="' + attrs.maxView + '" ' : '') + (attrs.autoClose ? 'auto-close="' + attrs.autoClose + '" ' : '') + (attrs.template ? 'template="' + attrs.template + '" ' : '') + (attrs.minView ? 'min-view="' + attrs.minView + '" ' : '') + (attrs.step ? 'step="' + attrs.step + '" ' : '') + 'class="ui-date-picker-date-time"></div>';
-    }
+    appendToBody: false
 })
 
 .filter('UITime', function() {
@@ -34,7 +31,7 @@ angular.module('module')
 .factory('UIDatePickerUtils', function() {
     var createNewDate = function(year, month, day, hour, minute) {
         // without any arguments, the default date will be 1899-12-31T00:00:00.000Z
-        return new Date(Date.UTC(year | 0, month | 0, day | 0, hour | 0, minute | 0));
+        return new Date(year | 0, month | 0, day | 0, hour | 0, minute | 0);
     };
     return {
         getVisibleMinutes: function(date, step) {
@@ -42,7 +39,7 @@ angular.module('module')
             var year = date.getFullYear();
             var month = date.getMonth();
             var day = date.getDate();
-            var hour = date.getUTCHours();
+            var hour = date.getHours();
             var minutes = [];
             var minute, pushedDate;
             for (minute = 0; minute < 60; minute += step) {
@@ -159,23 +156,24 @@ angular.module('module')
             // Invalid Date: getTime() returns NaN
             return value && !(value.getTime && value.getTime() !== value.getTime());
         },
-        parseDate : function(value , willReturn){
+        parseDate: function(value, willReturn) {
             if (angular.isNumber(value)) {
-              // presumably timestamp to date object
-              value = new Date(value);
+                // presumably timestamp to date object
+                value = new Date(value);
             }
-            if(!value){
+            willReturn = willReturn || NaN;
+            if (!value) {
                 return willReturn;
-            }else if(angular.isDate(value)){
-                return value;
-            }else if(angular.isString(value)){
+            } else if (angular.isDate(value)) {
+                return angular.copy(value);
+            } else if (angular.isString(value)) {
                 var time = Date.parse(value);
-                if(isNaN(time)){
+                if (isNaN(time)) {
                     return willReturn;
-                }else{
+                } else {
                     return new Date(value);
-                }    
-            }else {
+                }
+            } else {
                 return willReturn;
             }
         }
@@ -183,17 +181,20 @@ angular.module('module')
 })
 
 
-.directive('uiDatePicker', ['UIDatePickerConfig', 'UIDatePickerUtils', '$parse' , '$filter',
-    function datePickerDirective(UIDatePickerConfig, UIDatePickerUtils , $parse , $filter) {
+.directive('uiDatePicker', ['UIDatePickerConfig', 'UIDatePickerUtils', '$parse', '$filter','$log',
+    function datePickerDirective(UIDatePickerConfig, UIDatePickerUtils, $parse, $filter , $log) {
         var dateFilter = $filter('date');
         return {
-            restrict: 'EA',
+            restrict: 'A',
             replace: true,
             require: '?^ngModel',
             templateUrl: UIDatePickerConfig.templateUrl,
             scope: {
                 after: '=?',
-                before: '=?'
+                minDate: '=?',
+                before: '=?',
+                maxDate: '=?',
+                dateDisabled : '&'
             },
             link: function(scope, element, attrs, ngModel) {
                 var step = parseInt(attrs.step || UIDatePickerConfig.step, 10),
@@ -201,69 +202,48 @@ angular.module('module')
                     arrowClick = false,
                     now = new Date(),
                     format = attrs.format || UIDatePickerConfig.format;
-                scope.views = UIDatePickerConfig.views;
+                var views = UIDatePickerConfig.views;
                 scope.date = new Date();
                 scope.view = attrs.view || UIDatePickerConfig.view;
-                scope.views = scope.views.slice(
-                    scope.views.indexOf(attrs.maxView || 'year'),
-                    scope.views.indexOf(attrs.minView || 'minutes') + 1
+                views = views.slice(
+                    views.indexOf(attrs.maxView || views[0]),
+                    views.indexOf(attrs.minView || views[views.length-1]) + 1
                 );
-                if (scope.views.length === 1 || scope.views.indexOf(scope.view) === -1) {
-                    scope.view = scope.views[0];
+                if (views.length === 1 || views.indexOf(scope.view) === -1) {
+                    scope.view = views[0];
                 }
 
-                if(ngModel){
-                    ngModel.$render = function(){
-                        model = UIDatePickerUtils.parseDate(ngModel.$modelValue , new Date());
+                if (ngModel) {
+                    ngModel.$render = function() {
+                        $log.info("render-picker", ngModel.$modelValue);
+                        model = UIDatePickerUtils.parseDate(ngModel.$modelValue, new Date());
                         scope.date = angular.copy(model);
                     };
 
                     function parser(viewValue) {
-                        console.log("parser-picker",viewValue);
+                        $log.info("parser-picker", viewValue);
                         return UIDatePickerUtils.parseDate(viewValue);
                     };
 
                     ngModel.$parsers.unshift(parser);
-                    ngModel.$viewChangeListeners.push(function () {
-                        console.log('viewChangeListeners-picker',ngModel.$modelValue);
+                    ngModel.$viewChangeListeners.push(function() {
+                        $log.info('viewChangeListeners-picker', ngModel.$modelValue);
                     });
-                }                
-
-                // if(ngModel){
-                //     if (angular.isDefined(attrs.minDate)) {
-                //         var minVal;
-                //         ngModel.$validators.min = function(value) {
-                //             return !UIDatePickerUtils.isValidDate(value) || angular.isUndefined(minVal) || value >= minVal;
-                //         };
-                //         attrs.$observe('minDate', function(val) {
-                //             minVal = new Date(val);
-                //             ngModel.$validate();
-                //         });
-                //     }
-
-                //     if (angular.isDefined(attrs.maxDate)) {
-                //         var maxVal;
-                //         ngModel.$validators.max = function(value) {
-                //             return !UIDatePickerUtils.isValidDate(value) || angular.isUndefined(maxVal) || value <= maxVal;
-                //         };
-                //         attrs.$observe('maxDate', function(val) {
-                //             maxVal = new Date(val);
-                //             ngModel.$validate();
-                //         });
-                //     }
-                // }
-
-                //end min, max date validator
+                }
 
                 scope.setView = function(nextView) {
-                    if (scope.views.indexOf(nextView) !== -1) {
-                        scope.view = nextView;
+                    if (views.indexOf(nextView) !== -1) {
+                        setTimeout(function(){
+                            scope.view = nextView;
+                            scope.$apply();
+                        },100);
+                        //scope.view = nextView;
                     }
                 };
 
                 scope.setLastView = function(nextView) {
-                    var index = scope.views.indexOf(scope.view),
-                        lastView = index > 0 ? scope.views[index - 1]:null;
+                    var index = views.indexOf(scope.view),
+                        lastView = index > 0 ? views[index - 1] : null;
                     if (lastView) {
                         scope.view = lastView;
                     }
@@ -273,9 +253,12 @@ angular.module('module')
                     if (attrs.disabled) {
                         return;
                     }
+                    if(scope.isDisabled(date)){
+                        return;
+                    }
                     scope.date = date;
                     // change next view
-                    var nextView = scope.views[scope.views.indexOf(scope.view) + 1];
+                    var nextView = views[views.indexOf(scope.view) + 1];
                     switch (scope.view) {
                         case 'minutes':
                             model.setMinutes(date.getMinutes());
@@ -295,8 +278,8 @@ angular.module('module')
 
                     if (nextView) {
                         scope.setView(nextView);
-                    }else{
-                        if(ngModel){
+                    } else {
+                        if (ngModel) {
                             ngModel.$setViewValue(angular.copy(model));
                             ngModel.$render();
                         }
@@ -373,6 +356,10 @@ angular.module('module')
 
                 scope.prev = function(delta) {
                     return scope.next(-delta || -1);
+                };
+
+                scope.isDisabled = function(date){
+                    return (scope.minDate && date < scope.minDate) || (scope.maxDate && date > scope.maxDate) || (attrs.dateDisabled && scope.dateDisabled({date: date, view: scope.view}));
                 };
 
                 scope.isAfter = function(date) {
@@ -471,83 +458,179 @@ angular.module('module')
     };
 })
 
-.directive('uiDateTime', ['$compile', '$document', '$filter', 'UIDatePickerConfig', '$parse', 'UIDatePickerUtils',
+.directive('uiDateTime', ['$compile', '$document', '$filter', 'UIDatePickerConfig', '$parse', 'UIDatePickerUtils','$log',
 
-    function($compile, $document, $filter, UIDatePickerConfig, $parse, UIDatePickerUtils) {
+    function($compile, $document, $filter, UIDatePickerConfig, $parse, UIDatePickerUtils,$log) {
         var body = $document.find('body');
         var dateFilter = $filter('date');
 
         return {
-            restrict: 'EA',
+            restrict: 'A',
             require: 'ngModel',
-            scope: {},
+            scope: {
+                isOpen: '=?'
+            },
             link: function(scope, element, attrs, ngModel) {
+                scope.picked = NaN;
+                scope.watchData = {};
+
                 var format = attrs.format || UIDatePickerConfig.format;
-                var views = UIDatePickerConfig.views;
-                var autoClose = attrs.autoClose ? $parse(attrs.autoClose)(scope) : UIDatePickerConfig.autoClose;
+                var views = UIDatePickerConfig.views ;
+                var closeOnDateSelection = angular.isDefined(attrs.closeOnDateSelection) ? scope.$parent.$eval(attrs.closeOnDateSelection) : UIDatePickerConfig.closeOnDateSelection;
+                var appendToBody = angular.isDefined(attrs.datepickerAppendToBody) ? scope.$parent.$eval(attrs.datepickerAppendToBody) : UIDatePickerConfig.appendToBody;
                 var picker = null;
                 var container = null;
-                var appendToBody = angular.isDefined(attrs.datepickerAppendToBody) ? scope.$parent.$eval(attrs.datepickerAppendToBody) : UIDatePickerConfig.appendToBody;
+                var makePopupTemplate = (function() {
+                    function cameltoDash(string) {
+                        return string.replace(/([A-Z])/g, function($1) {
+                            return '-' + $1.toLowerCase();
+                        });
+                    }
+                    return function() {
+                        var datepickerEl = angular.element('<div ui-date-picker class="ui-date-picker-date-time"></div>');
+                        var pickerAttrs = {
+                            'ng-model': 'picked',
+                            'ng-change': 'dateSelection(date)'
+                        };
+                        //不可变
+                        ['minView', 'maxView', 'view', 'step'].forEach(function(key) {
+                            if (attrs[key]) {
+                                //如果不为Express则直接取其字符串
+                                pickerAttrs[cameltoDash(key)] = scope.$parent.$eval(attrs[key]) || attrs[key];
+                                //将数组转成特定字符串 -> 已废弃用法
+                                // if(key=="views"){
+                                //     pickerAttrs[cameltoDash(key)] = "['"+pickerAttrs[cameltoDash(key)].join("','")+"']";
+                                // }
+                            }
+                        });
+                        //可变
+                        ['minDate', 'maxDate'].forEach(function(key) {
+                            if (attrs[key]) {
+                                //scope.watchDate 再各自需要的地方定义及赋值            
+                                pickerAttrs[cameltoDash(key)] = 'watchData.' + key;
+                            }
+                        });
+                        if (attrs.dateDisabled) {
+                            pickerAttrs['date-disabled'] = 'dateDisabled({ date: date, view: view })';
+                        }
 
+                        datepickerEl.attr(pickerAttrs);
+
+                        var template = datepickerEl[0];
+                        datepickerEl.remove();
+                        //只返回文本内容 因为DOM再compile后会绑定很多奇怪属性 会影响再次compile
+                        return template;
+                    }
+                })()
+
+                var template = makePopupTemplate();
+
+
+                //modelValue ->format[]()-> {viewValue->render()}->validator[key]()
                 function formatter(modelValue) {
                     //先将model变为dateObj 有可能是第三方不可控改变的
                     var modelValue = UIDatePickerUtils.parseDate(modelValue)
-                    console.log("formatter-input",modelValue ,format,dateFilter(modelValue, format));
+                    $log.info("formatter-input", modelValue, format, dateFilter(modelValue, format));
+                    if (UIDatePickerUtils.isValidDate(modelValue)) {
+                        scope.picked = modelValue
+                    }
                     return modelValue ? dateFilter(modelValue, format) : "";
                 }
 
+                //viewValue ->parser[]()-> modelValue->validator[key]()->$viewChangeListeners()
                 function parser(viewValue) {
-                    console.log("parser-input",viewValue,UIDatePickerUtils.parseDate(viewValue));
-                    return UIDatePickerUtils.parseDate(viewValue);
+                    $log.info("parser-input", viewValue, UIDatePickerUtils.parseDate(viewValue));
+                    var modelValue = UIDatePickerUtils.parseDate(viewValue);
+                    if (UIDatePickerUtils.isValidDate(modelValue)) {
+                        scope.picked = modelValue
+                    }
+                    return modelValue;
                 }
 
                 function validator(modelValue, viewValue) {
-                    console.log("validator-input",modelValue, viewValue);
+                    $log.info("validator-input", modelValue, viewValue);
                     var value = modelValue || viewValue;
-                    if(!value){
+                    if (isNaN(value)){
+                        return false
+                    }else if(!value) {
                         return true;
-                    }else{
-                        return !angular.isUndefined(UIDatePickerUtils.parseDate(viewValue)); 
+                    } else {
+                        return UIDatePickerUtils.isValidDate(UIDatePickerUtils.parseDate(viewValue));
                     }
                 }
-
                 ngModel.$$parserName = 'date';
                 ngModel.$validators.date = validator;
                 ngModel.$formatters.push(formatter);
                 ngModel.$parsers.unshift(parser);
-                ngModel.$viewChangeListeners.push(function () {
-                    console.log('viewChangeListeners-input',ngModel.$modelValue);
-                    scope.date = ngModel.$modelValue || new Date();
+                ngModel.$viewChangeListeners.push(function() {
+                    $log.info('viewChangeListeners-input', ngModel.$modelValue);
                 });
 
 
                 //min. max date validators
-                if (angular.isDefined(attrs.minDate)) {
+                if (attrs.minDate) {
                     var minVal;
                     ngModel.$validators.min = function(value) {
-                        return !UIDatePickerUtils.isValidDate(value) || angular.isUndefined(minVal) || value >= minVal;
+                        return !minVal || !UIDatePickerUtils.isValidDate(minVal) || !UIDatePickerUtils.isValidDate(value) || value >= minVal;
                     };
-                    attrs.$observe('minDate', function(val) {
-                        minVal = new Date(val);
-                        ngModel.$validate();
+                    scope.$parent.$watch($parse(attrs.minDate), function(val) {
+                        minVal = UIDatePickerUtils.parseDate(val);
+                        if(UIDatePickerUtils.isValidDate(minVal)){
+                            minVal.setHours(0,0,0,0);
+                            ngModel.$validate();
+                            scope.watchData['minDate'] = minVal;
+                        }
                     });
                 }
 
-                if (angular.isDefined(attrs.maxDate)) {
+                if (attrs.maxDate) {
                     var maxVal;
                     ngModel.$validators.max = function(value) {
-                        return !UIDatePickerUtils.isValidDate(value) || angular.isUndefined(maxVal) || value <= maxVal;
+                        return !maxVal || !UIDatePickerUtils.isValidDate(maxVal) || !UIDatePickerUtils.isValidDate(value) || value <= maxVal;
                     };
-                    attrs.$observe('maxDate', function(val) {
-                        maxVal = new Date(val);
-                        ngModel.$validate();
+                    scope.$parent.$watch($parse(attrs.maxDate), function(val) {
+                        maxVal = UIDatePickerUtils.parseDate(val);
+                        if(UIDatePickerUtils.isValidDate(minVal)){
+                            maxVal.setHours(23,60,0,0);
+                            ngModel.$validate();
+                            scope.watchData['maxDate'] = maxVal;
+                        }
                     });
                 }
                 //end min, max date validator
 
-                var template = UIDatePickerConfig.popupTemplate(attrs);
 
-                function clear() {
+                element.on('click', open);
+                $document.on('mousedown', documentClickBind);
+
+                scope.$on('setDate', function(event, date, view) {
+                    var date = date ? dateFilter(date, format) : '';
+                    $log.info('setDate', date);
+                    ngModel.$setViewValue(date)
+                    ngModel.$render();
+                    if (closeOnDateSelection) {
+                        close();
+                        //只能此时给焦点 以免干扰其他交互
+                        element[0].focus();
+                    }
+                });
+
+                scope.$on('$destroy', function() {
+                    element.off('click', open);
+                    $document.off('mousedown', documentClickBind);
+                    close();
+                });
+
+                function documentClickBind(event){
+                    //console.log(event.target , angular.element(event.target).closest("[ui-date-picker]"),picker && picker[0].contains(event.target));
+                    //由于采用ng-switch方案瞬间摘出DOM，所以根本无法准备判断父子关系
+                    //只能强制picker不做冒泡
+                    if(event.target != element[0] && (!picker || event.target != picker[0])){
+                        close();
+                    }
+                }
+
+                function close() {
                     if (picker) {
                         picker.remove();
                         picker = null;
@@ -558,41 +641,25 @@ angular.module('module')
                     }
                 }
 
-                function showPicker() {
+                function open() {
                     if (picker) {
                         return;
                     }
-                    // create picker element
                     picker = $compile(template)(scope);
                     scope.$digest();
 
-                    scope.$on('setDate', function(event, date, view) {
-                        var date = date ? dateFilter(date, format) : '';
-                        console.log('setDate',date);
-                        ngModel.$setViewValue(date)
-                        ngModel.$render();
-                        if (autoClose && views[views.length - 1] === view) {
-                            clear();
-                        }
-                    });
-
-                    // scope.$on('hidePicker', function() {
-                    //     picker.addClass('hidden');
-                    //     clear();
-                    //     //element.triggerHandler('blur');
-                    // });
-
-                    scope.$on('$destroy', function(){
-                        element.off('click', showPicker);
-                        element.off('blur', clear);
-                        clear();
-                    });
-
-                    if(appendToBody){
-                        var pos = angular.extend(element.offset(), { height: element[0].offsetHeight });
-                        picker.css({ top: pos.top + pos.height, left: pos.left, display: 'block', position: 'absolute'});
+                    if (appendToBody) {
+                        var pos = angular.extend(element.offset(), {
+                            height: element[0].offsetHeight
+                        });
+                        picker.css({
+                            top: pos.top + pos.height,
+                            left: pos.left,
+                            display: 'block',
+                            position: 'absolute'
+                        });
                         body.append(picker);
-                    }else{
+                    } else {
                         container = angular.element('<div ui-date-picker-wrapper></div>');
                         element[0].parentElement.insertBefore(container[0], element[0]);
                         container.append(picker);
@@ -604,15 +671,13 @@ angular.module('module')
                         });
                     }
 
-                    
+                    //由于采用ng-switch方案瞬间摘出DOM，所以根本无法准备判断父子关系
+                    //只能强制picker不做冒泡
                     picker.on('mousedown', function(evt) {
-                        evt.preventDefault();
+                        evt.stopPropagation();
                     });
                 }
 
-                element.on('focus', showPicker);
-                //element.on('blur', clear);
-                
             }
         };
     }

@@ -95,11 +95,17 @@
 [ui-date-picker] span:hover {
   background: #eeeeee;
 }
-[ui-date-picker] span.disabled,
-[ui-date-picker] span.disabled:hover {
+[ui-date-picker] span.other-month,
+[ui-date-picker] span.other-month:hover {
   background: none;
   color: #999999;
   cursor: default;
+}
+[ui-date-picker] span.disabled,
+[ui-date-picker] span.disabled:hover {
+  cursor: not-allowed;
+  background: none;
+  color: #999999;
 }
 [ui-date-picker] .active,
 [ui-date-picker] .now {
@@ -192,5 +198,4 @@
 [ui-date-picker] th:hover,
 [ui-date-picker] [ng-switch-when="date"] td span:hover {
   background: #eeeeee;
-  cursor: pointer;
 }

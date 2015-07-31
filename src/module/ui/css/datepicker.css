@@ -20,11 +20,6 @@
     color: #ffffff;
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
     background-color: #499dcd;
-    background-image: -moz-linear-gradient(top, #5bc0de, #2f6ab4);
-    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#5bc0de), to(#2f6ab4));
-    background-image: -webkit-linear-gradient(top, #5bc0de, #2f6ab4);
-    background-image: -o-linear-gradient(top, #5bc0de, #2f6ab4);
-    background-image: linear-gradient(to bottom, #5bc0de, #2f6ab4);
     background-repeat: repeat-x;
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff5bc0de', endColorstr='#ff2f6ab4', GradientType=0);
     border-color: #2f6ab4 #2f6ab4 #1f4677;
@@ -36,7 +31,6 @@
 [ui-date-range] [ui-date-picker] .after.before:hover,
 [ui-date-range] [ui-date-picker] .after.before:active,
 [ui-date-range] [ui-date-picker] .after.before.active,
-[ui-date-range] [ui-date-picker] .after.before.disabled,
 [ui-date-range] [ui-date-picker] .after.before[disabled] {
   color: #ffffff;
   background-color: #2f6ab4;
@@ -55,9 +49,6 @@
   -ms-user-select: none;
   -o-user-select: none;
   user-select: none;
-  -webkit-border-radius: 4px;
-  -moz-border-radius: 4px;
-  border-radius: 4px;
   background-color: #fff;
   /* GENERAL */
   padding: 4px;
@@ -80,29 +71,36 @@
 [ui-date-picker] .switch {
   width: 145px;
 }
-[ui-date-picker] span {
+[ui-date-picker] button {
   display: block;
   width: 23%;
   height: 26px;
-  line-height: 25px;
+  line-height: 26px;
   float: left;
   margin: 1%;
   cursor: pointer;
-  -webkit-border-radius: 4px;
-  -moz-border-radius: 4px;
-  border-radius: 4px;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  border-radius: 5px;
+  background: none;
+  border: none;
+  text-align: center;
+  padding: 0;
 }
-[ui-date-picker] span:hover {
+[ui-date-picker] button:active {
+  border:none;
+}
+[ui-date-picker] button:hover {
   background: #eeeeee;
 }
-[ui-date-picker] span.other-month,
-[ui-date-picker] span.other-month:hover {
+[ui-date-picker] button.text-muted,
+[ui-date-picker] button.text-muted:hover {
   background: none;
   color: #999999;
   cursor: default;
 }
-[ui-date-picker] span.disabled,
-[ui-date-picker] span.disabled:hover {
+[ui-date-picker] button[disabled],
+[ui-date-picker] button[disabled]:hover {
   cursor: not-allowed;
   background: none;
   color: #999999;
@@ -111,15 +109,8 @@
 [ui-date-picker] .now {
   color: #ffffff;
   background-color: #006dcc;
-  background-image: -moz-linear-gradient(top, #0088cc, #0044cc);
-  background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#0088cc), to(#0044cc));
-  background-image: -webkit-linear-gradient(top, #0088cc, #0044cc);
-  background-image: -o-linear-gradient(top, #0088cc, #0044cc);
-  background-image: linear-gradient(to bottom, #0088cc, #0044cc);
   background-repeat: repeat-x;
   filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ff0088cc', endColorstr='#ff0044cc', GradientType=0);
-  border-color: #0044cc #0044cc #002a80;
-  border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
   *background-color: #0044cc;
   /* Darken IE7 buttons by default so they stand out more given they won't have borders */
     filter: progid:DXImageTransform.Microsoft.gradient(enabled = false);
@@ -132,8 +123,6 @@
 [ui-date-picker] .now:active,
 [ui-date-picker] .active.active,
 [ui-date-picker] .now.active,
-[ui-date-picker] .active.disabled,
-[ui-date-picker] .now.disabled,
 [ui-date-picker] .active[disabled],
 [ui-date-picker] .now[disabled] {
     color: #ffffff;
@@ -150,15 +139,8 @@
     color: #ffffff;
     text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
     background-color: #ee735b;
-    background-image: -moz-linear-gradient(top, #ee5f5b, #ee905b);
-    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ee5f5b), to(#ee905b));
-    background-image: -webkit-linear-gradient(top, #ee5f5b, #ee905b);
-    background-image: -o-linear-gradient(top, #ee5f5b, #ee905b);
-    background-image: linear-gradient(to bottom, #ee5f5b, #ee905b);
     background-repeat: repeat-x;
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffee5f5b', endColorstr='#ffee905b', GradientType=0);
-    border-color: #ee905b #ee905b #e56218;
-    border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
     *background-color: #ee905b;
   /* Darken IE7 buttons by default so they stand out more given they won't have borders */
   filter: progid:DXImageTransform.Microsoft.gradient(enabled = false);
@@ -166,7 +148,6 @@
 [ui-date-picker] .now:hover,
 [ui-date-picker] .now:active,
 [ui-date-picker] .now.active,
-[ui-date-picker] .now.disabled,
 [ui-date-picker] .now[disabled] {
   color: #ffffff;
   background-color: #ee905b;
@@ -176,26 +157,26 @@
 [ui-date-picker] .now.active {
   background-color: #e9712d \9;
 }
-[ui-date-picker] .disabled {
+[ui-date-picker] [disabled] {
   background: none;
   color: #999999 !important;
   cursor: default;
 }
-[ui-date-picker] [ng-switch-when="year"] span,
-[ui-date-picker] [ng-switch-when="month"] span,
-[ui-date-picker] [ng-switch-when="minutes"] span {
+[ui-date-picker] [ng-switch-when="year"] button,
+[ui-date-picker] [ng-switch-when="month"] button,
+[ui-date-picker] [ng-switch-when="minutes"] button {
   height: 54px;
   line-height: 54px;
 }
 [ui-date-picker] [ng-switch-when="date"] td {
   padding: 0;
 }
-[ui-date-picker] [ng-switch-when="date"] span {
+[ui-date-picker] [ng-switch-when="date"] button {
   width: 100%;
   height: 26px;
   line-height: 26px;
 }
 [ui-date-picker] th:hover,
-[ui-date-picker] [ng-switch-when="date"] td span:hover {
+[ui-date-picker] [ng-switch-when="date"] td button:hover {
   background: #eeeeee;
 }

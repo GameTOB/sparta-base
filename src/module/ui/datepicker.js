@@ -181,8 +181,8 @@ angular.module('module')
 })
 
 
-.directive('uiDatePicker', ['UIDatePickerConfig', 'UIDatePickerUtils', '$parse', '$filter','$log',
-    function datePickerDirective(UIDatePickerConfig, UIDatePickerUtils, $parse, $filter , $log) {
+.directive('uiDatePicker', ['UIDatePickerConfig', 'UIDatePickerUtils', '$filter','$log',
+    function datePickerDirective(UIDatePickerConfig, UIDatePickerUtils, $filter , $log) {
         var dateFilter = $filter('date');
         return {
             restrict: 'A',
@@ -251,9 +251,6 @@ angular.module('module')
 
                 scope.setDate = function(date) {
                     if (attrs.disabled) {
-                        return;
-                    }
-                    if(scope.isDisabled(date)){
                         return;
                     }
                     scope.date = date;
@@ -330,7 +327,6 @@ angular.module('module')
                     delta = delta || 1;
                     switch (scope.view) {
                         case 'year':
-                            /*falls through*/
                         case 'month':
                             date.setFullYear(date.getFullYear() + delta);
                             break;
@@ -345,7 +341,6 @@ angular.module('module')
                             date.setMonth(date.getMonth() + delta);
                             break;
                         case 'hours':
-                            /*falls through*/
                         case 'minutes':
                             date.setHours(date.getHours() + delta);
                             break;
@@ -359,7 +354,10 @@ angular.module('module')
                 };
 
                 scope.isDisabled = function(date){
-                    return (scope.minDate && date < scope.minDate) || (scope.maxDate && date > scope.maxDate) || (attrs.dateDisabled && scope.dateDisabled({date: date, view: scope.view}));
+                    if(scope.view=="date"){
+                        return (scope.minDate && date < scope.minDate) || (scope.maxDate && date > scope.maxDate) || (attrs.dateDisabled && scope.dateDisabled({date: date, view: scope.view}));
+                    }
+                    return attrs.dateDisabled && scope.dateDisabled({date: date, view: scope.view});
                 };
 
                 scope.isAfter = function(date) {
@@ -458,9 +456,9 @@ angular.module('module')
     };
 })
 
-.directive('uiDateTime', ['$compile', '$document', '$filter', 'UIDatePickerConfig', '$parse', 'UIDatePickerUtils','$log',
+.directive('uiDateTime', ['$compile', '$document', '$filter', 'UIDatePickerConfig', 'UIDatePickerUtils','$log',
 
-    function($compile, $document, $filter, UIDatePickerConfig, $parse, UIDatePickerUtils,$log) {
+    function($compile, $document, $filter, UIDatePickerConfig, UIDatePickerUtils,$log) {
         var body = $document.find('body');
         var dateFilter = $filter('date');
 
@@ -468,7 +466,7 @@ angular.module('module')
             restrict: 'A',
             require: 'ngModel',
             scope: {
-                isOpen: '=?'
+                dateDisabled: '&'
             },
             link: function(scope, element, attrs, ngModel) {
                 scope.picked = NaN;
@@ -477,9 +475,10 @@ angular.module('module')
                 var format = attrs.format || UIDatePickerConfig.format;
                 var views = UIDatePickerConfig.views ;
                 var closeOnDateSelection = angular.isDefined(attrs.closeOnDateSelection) ? scope.$parent.$eval(attrs.closeOnDateSelection) : UIDatePickerConfig.closeOnDateSelection;
-                var appendToBody = angular.isDefined(attrs.datepickerAppendToBody) ? scope.$parent.$eval(attrs.datepickerAppendToBody) : UIDatePickerConfig.appendToBody;
+                var appendToBody = angular.isDefined(attrs.appendToBody) ? scope.$parent.$eval(attrs.appendToBody) : UIDatePickerConfig.appendToBody;
                 var picker = null;
                 var container = null;
+                var clickFromPicker = false;
                 var makePopupTemplate = (function() {
                     function cameltoDash(string) {
                         return string.replace(/([A-Z])/g, function($1) {
@@ -567,13 +566,12 @@ angular.module('module')
                 });
 
 
-                //min. max date validators
                 if (attrs.minDate) {
                     var minVal;
                     ngModel.$validators.min = function(value) {
                         return !minVal || !UIDatePickerUtils.isValidDate(minVal) || !UIDatePickerUtils.isValidDate(value) || value >= minVal;
                     };
-                    scope.$parent.$watch($parse(attrs.minDate), function(val) {
+                    scope.$parent.$watch(attrs.minDate, function(val) {
                         minVal = UIDatePickerUtils.parseDate(val);
                         if(UIDatePickerUtils.isValidDate(minVal)){
                             minVal.setHours(0,0,0,0);
@@ -588,7 +586,7 @@ angular.module('module')
                     ngModel.$validators.max = function(value) {
                         return !maxVal || !UIDatePickerUtils.isValidDate(maxVal) || !UIDatePickerUtils.isValidDate(value) || value <= maxVal;
                     };
-                    scope.$parent.$watch($parse(attrs.maxDate), function(val) {
+                    scope.$parent.$watch(attrs.maxDate, function(val) {
                         maxVal = UIDatePickerUtils.parseDate(val);
                         if(UIDatePickerUtils.isValidDate(minVal)){
                             maxVal.setHours(23,60,0,0);
@@ -597,8 +595,6 @@ angular.module('module')
                         }
                     });
                 }
-                //end min, max date validator
-
 
                 element.on('click', open);
                 $document.on('mousedown', documentClickBind);
@@ -624,8 +620,8 @@ angular.module('module')
                 function documentClickBind(event){
                     //console.log(event.target , angular.element(event.target).closest("[ui-date-picker]"),picker && picker[0].contains(event.target));
                     //由于采用ng-switch方案瞬间摘出DOM，所以根本无法准备判断父子关系
-                    //只能强制picker不做冒泡
-                    if(event.target != element[0] && (!picker || event.target != picker[0])){
+                    //console.log(clickFromPicker);
+                    if(event.target != element[0] && picker && clickFromPicker==false){
                         close();
                     }
                 }
@@ -647,7 +643,6 @@ angular.module('module')
                     }
                     picker = $compile(template)(scope);
                     scope.$digest();
-
                     if (appendToBody) {
                         var pos = angular.extend(element.offset(), {
                             height: element[0].offsetHeight
@@ -662,19 +657,26 @@ angular.module('module')
                     } else {
                         container = angular.element('<div ui-date-picker-wrapper></div>');
                         element[0].parentElement.insertBefore(container[0], element[0]);
+                        var pos = angular.extend(element.position(), {
+                            height: element[0].offsetHeight
+                        }) ,wrapPos = container.position();
                         container.append(picker);
-                        //          this approach doesn't work
-                        //          element.before(picker);
                         picker.css({
-                            top: element[0].offsetHeight + 'px',
+                            left: pos.left - wrapPos.left,
+                            top: pos.top + pos.height - wrapPos.top,
                             display: 'block'
                         });
                     }
 
                     //由于采用ng-switch方案瞬间摘出DOM，所以根本无法准备判断父子关系
-                    //只能强制picker不做冒泡
+                    //但又不想强制picker不做冒泡 这样强制不冒泡有阻碍正常行为的风险
+                    //故采取flag方式
                     picker.on('mousedown', function(evt) {
-                        evt.stopPropagation();
+                        clickFromPicker = true;
+                        //这里不用$timeout
+                        setTimeout(function(){
+                            clickFromPicker = false;
+                        },0);
                     });
                 }
 

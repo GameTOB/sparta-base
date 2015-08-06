@@ -1,4 +1,3 @@
-'use strict';
 //forked from https://github.com/g00fy-/angular-datepicker
 angular.module('module')
 
@@ -185,7 +184,7 @@ angular.module('module')
     function datePickerDirective(UIDatePickerConfig, UIDatePickerUtils, $filter , $log) {
         var dateFilter = $filter('date');
         return {
-            restrict: 'A',
+            restrict: 'AE',
             replace: true,
             require: '?^ngModel',
             templateUrl: UIDatePickerConfig.templateUrl,
@@ -416,6 +415,7 @@ angular.module('module')
 
 .directive('uiDateRange', function() {
     return {
+        restrict: 'AE',
         templateUrl: 'module/ui/template/daterange.tpl',
         scope: {
             start: '=',
@@ -463,7 +463,7 @@ angular.module('module')
         var dateFilter = $filter('date');
 
         return {
-            restrict: 'A',
+            restrict: 'AE',
             require: 'ngModel',
             scope: {
                 dateDisabled: '&'

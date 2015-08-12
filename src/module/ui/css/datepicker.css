@@ -1,5 +1,6 @@
 .ui-date-picker-date-time  {
   position: absolute;
+  display: block;
 }
 [ui-date-picker-wrapper] {
     position: absolute;

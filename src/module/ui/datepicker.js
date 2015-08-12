@@ -185,7 +185,7 @@ angular.module('module')
         var dateFilter = $filter('date');
         return {
             restrict: 'AE',
-            replace: true,
+            transclude: true,
             require: '?^ngModel',
             templateUrl: UIDatePickerConfig.templateUrl,
             scope: {
@@ -415,7 +415,6 @@ angular.module('module')
 
 .directive('uiDateRange', function() {
     return {
-        restrict: 'AE',
         templateUrl: 'module/ui/template/daterange.tpl',
         scope: {
             start: '=',
@@ -486,7 +485,7 @@ angular.module('module')
                         });
                     }
                     return function() {
-                        var datepickerEl = angular.element('<div ui-date-picker class="ui-date-picker-date-time"></div>');
+                        var datepickerEl = angular.element('<div ui-date-picker class="ui-date-picker-date-time"><div ng-transclude></div></div>');
                         var pickerAttrs = {
                             'ng-model': 'picked',
                             'ng-change': 'dateSelection(date)'
@@ -589,7 +588,7 @@ angular.module('module')
                     scope.$parent.$watch(attrs.maxDate, function(val) {
                         maxVal = UIDatePickerUtils.parseDate(val);
                         if(UIDatePickerUtils.isValidDate(minVal)){
-                            maxVal.setHours(23,60,0,0);
+                            maxVal.setHours(23,59,59,0);
                             ngModel.$validate();
                             scope.watchData['maxDate'] = maxVal;
                         }
@@ -649,9 +648,7 @@ angular.module('module')
                         });
                         picker.css({
                             top: pos.top + pos.height,
-                            left: pos.left,
-                            display: 'block',
-                            position: 'absolute'
+                            left: pos.left
                         });
                         body.append(picker);
                     } else {
@@ -660,11 +657,10 @@ angular.module('module')
                         var pos = angular.extend(element.position(), {
                             height: element[0].offsetHeight
                         }) ,wrapPos = container.position();
-                        container.append(picker);
+                        container.append(picker); 
                         picker.css({
                             left: pos.left - wrapPos.left,
-                            top: pos.top + pos.height - wrapPos.top,
-                            display: 'block'
+                            top: pos.top + pos.height - wrapPos.top
                         });
                     }
 

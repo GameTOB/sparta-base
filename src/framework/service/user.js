@@ -44,8 +44,8 @@ angular.module('framework')
     });
 
     var domain = document.domain,
-        isCorp = document.domain.substr(-1 * ("corp.qihoo.net").length) == "corp.qihoo.net",
-        isQuc = document.domain.substr(-1 * ("360.cn").length) == "360.cn";
+        isCorp = document.domain.substr(-1 * ("xxxxx").length) == "xxxx",
+        isQuc = document.domain.substr(-1 * ("xxxx").length) == "xxxx";
 
     if (window.QHPass && angular.isFunction(QHPass.init)) {
         var _opts = {
@@ -69,7 +69,7 @@ angular.module('framework')
             if (isCorp) {
                 $location.search('sid', null);
                 $timeout(function() {
-                    location.replace("https://login.ops.qihoo.net:4430/sec/login?ref=" + encodeURIComponent(location.href));
+                    location.replace("http://xxx.xxx/?ref=" + encodeURIComponent(location.href));
                 });
                 return;
             }else if (isQuc && window.QHPass) {
@@ -77,7 +77,7 @@ angular.module('framework')
                     location.reload();
                 });
             }else {
-                Debug.error('Please use 360.cn or copr.qihoo.net , or you could forget QUC JS-SDK');
+                Debug.error('Please use xxxx , or you could forget QUC JS-SDK');
             }
         },
         getTruely : function(force){
